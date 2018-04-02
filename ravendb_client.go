@@ -1,19 +1,50 @@
 package main
 
 import (
+	"crypto/x509"
+	"crypto/tls"
+	"log"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 )
 
 var (
-	client = &http.Client{
-		Timeout: timeout,
-	}
+	client http.Client
 )
 
 type stats struct {
 	memory map[string]interface{}
+}
+
+func initializeClient() {
+	tlsConfig := &tls.Config{}
+	
+	if caCertFile != "" {
+		caCertData, err := ioutil.ReadFile(caCertFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCertData)
+		tlsConfig.RootCAs = caCertPool	
+	}
+
+	if useAuth {
+		cert, err := tls.LoadX509KeyPair(clientCertFile, clientKeyFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		tlsConfig.Certificates = []tls.Certificate{cert}
+		tlsConfig.BuildNameToCertificate()
+	}
+	transport := &http.Transport{TLSClientConfig: tlsConfig}
+
+	client = http.Client{
+		Transport: transport,
+		Timeout: timeout,
+	}
+
 }
 
 func getStats() (*stats, error) {
@@ -30,6 +61,7 @@ func get(path string) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer response.Body.Close()
 
 	buf, err := ioutil.ReadAll(response.Body)
 	if err != nil {

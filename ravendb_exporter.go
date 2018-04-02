@@ -16,8 +16,12 @@ const (
 )
 
 var (
-	ravenBaseURL = "http://localhost:8080"
-	timeout      = time.Second * 10
+	ravenBaseURL 	= "https://a.bcore.ravendb.community" //"http://localhost:8080"
+	timeout      	= time.Second * 10
+	caCertFile		= "C:\\Users\\marci\\Downloads\\bcore.Cluster.Settings\\lets-encrypt-x3-cross-signed.crt"
+	useAuth		 	= true
+	clientCertFile	= "C:\\Users\\marci\\Downloads\\bcore.Cluster.Settings\\admin.client.certificate.bcore.crt"
+	clientKeyFile	= "C:\\Users\\marci\\Downloads\\bcore.Cluster.Settings\\admin.client.certificate.bcore.key"
 )
 
 type exporter struct {
@@ -82,6 +86,8 @@ func serveMetrics() {
 }
 
 func main() {
+
+	initializeClient()
 
 	serveLandingPage()
 	serveMetrics()
