@@ -1,11 +1,11 @@
 package main
 
 import (
-	"crypto/x509"
 	"crypto/tls"
-	"log"
+	"crypto/x509"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -19,7 +19,7 @@ type stats struct {
 
 func initializeClient() {
 	tlsConfig := &tls.Config{}
-	
+
 	if caCertFile != "" {
 		caCertData, err := ioutil.ReadFile(caCertFile)
 		if err != nil {
@@ -27,7 +27,7 @@ func initializeClient() {
 		}
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCertData)
-		tlsConfig.RootCAs = caCertPool	
+		tlsConfig.RootCAs = caCertPool
 	}
 
 	if useAuth {
@@ -42,7 +42,7 @@ func initializeClient() {
 
 	client = http.Client{
 		Transport: transport,
-		Timeout: timeout,
+		Timeout:   timeout,
 	}
 
 }
@@ -57,7 +57,7 @@ func getStats() (*stats, error) {
 }
 
 func get(path string) (map[string]interface{}, error) {
-	response, err := client.Get(ravenBaseURL + path)
+	response, err := client.Get(ravenDbURL + path)
 	if err != nil {
 		return nil, err
 	}

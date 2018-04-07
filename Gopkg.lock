@@ -20,6 +20,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/namsral/flag"
+  packages = ["."]
+  revision = "71ceffbeb0ba60fccc853971bb3ed4d7d90bfd04"
+  version = "v1.7.4-pre"
+
+[[projects]]
   name = "github.com/prometheus/client_golang"
   packages = [
     "prometheus",
@@ -58,6 +64,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1306b5d3f396c67eb55e9b52efbbc934ba97c870f1dc10adfe330b630b986dcc"
+  inputs-digest = "bf2ccdd21413d057c5debd9a18b50f90691ce5fe7a2cd7aa8ffe1c8931342596"
   solver-name = "gps-cdcl"
   solver-version = 1
