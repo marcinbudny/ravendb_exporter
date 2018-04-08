@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/namsral/flag"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -18,8 +19,11 @@ const (
 )
 
 var (
+	log = logrus.New()
+
 	timeout time.Duration
 	port    uint
+	verbose bool
 
 	ravenDbURL     string
 	caCertFile     string
@@ -46,7 +50,11 @@ func (e *exporter) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (e *exporter) Collect(ch chan<- prometheus.Metric) {
+	log.Info("Running scrape")
+
 	if stats, err := getStats(); err != nil {
+		log.WithError(err).Error("Error while getting data from RavenDB")
+
 		e.up.Set(0)
 		ch <- e.up
 	} else {
@@ -93,6 +101,7 @@ func readAndValidateConfig() {
 	flag.StringVar(&ravenDbURL, "ravendb-url", "http://localhost:8080", "RavenDB URL")
 	flag.UintVar(&port, "port", 9999, "Port to listen on")
 	flag.DurationVar(&timeout, "timeout", time.Second*10, "Timeout when calling RavenDB")
+	flag.BoolVar(&verbose, "verbose", false, "Enable verbose logging")
 
 	flag.StringVar(&caCertFile, "ca-cert", "", "Path to CA public cert file")
 	flag.BoolVar(&useAuth, "use-auth", false, "If set, connection to RavenDB will be authenticated with a client certificate")
@@ -101,23 +110,42 @@ func readAndValidateConfig() {
 
 	flag.Parse()
 
+	log.WithFields(logrus.Fields{
+		"ravenDbUrl": ravenDbURL,
+		"caCert":     caCertFile,
+		"useAuth":    useAuth,
+		"clientCert": clientCertFile,
+		"clientKey":  clientKeyFile,
+		"port":       port,
+		"timeout":    timeout,
+		"verbose":    verbose,
+	}).Infof("RavenDB exporter configured")
+
 	if useAuth && (caCertFile == "" || clientCertFile == "" || clientKeyFile == "") {
 		log.Fatal("Invalid configuration: when using authentication you need to specify the CA cert, client cert and client private key")
 	}
+}
 
-	log.Printf("RavenDB exporter configuration RavenDB URL: %v, CA cert: %v, use auth: %v, client cert: %v, client key: %v",
-		ravenDbURL, caCertFile, useAuth, clientCertFile, clientKeyFile)
+func setupLogger() {
+	if verbose {
+		log.Level = logrus.DebugLevel
+	}
+}
+
+func startHTTPServer() {
+	listenAddr := fmt.Sprintf(":%d", port)
+	log.Fatal(http.ListenAndServe(listenAddr, nil))
 }
 
 func main() {
 
 	readAndValidateConfig()
+	setupLogger()
 
 	initializeClient()
 
 	serveLandingPage()
 	serveMetrics()
 
-	listenAddr := fmt.Sprintf(":%d", port)
-	log.Fatal(http.ListenAndServe(listenAddr, nil))
+	startHTTPServer()
 }

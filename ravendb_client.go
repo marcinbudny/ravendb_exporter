@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
@@ -57,7 +56,11 @@ func getStats() (*stats, error) {
 }
 
 func get(path string) (map[string]interface{}, error) {
-	response, err := client.Get(ravenDbURL + path)
+	url := ravenDbURL + path
+	
+	log.WithField("url", url).Debug("GET request to RavenDB")
+	
+	response, err := client.Get(url)
 	if err != nil {
 		return nil, err
 	}
