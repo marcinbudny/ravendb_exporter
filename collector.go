@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	jp "github.com/buger/jsonparser"
 )
 
 const (
@@ -38,7 +39,8 @@ func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 		e.up.Set(1)
 		ch <- e.up
 
-		e.workingSet.Set(stats.memory["WorkingSet"].(float64))
+		value, _ := jp.GetFloat(stats.memory, "WorkingSet")
+		e.workingSet.Set(value)
 		ch <- e.workingSet
 	}
 }
