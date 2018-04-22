@@ -60,6 +60,7 @@ func initializeClient() {
 
 }
 
+
 func getStats() (*stats, error) {
 	
 	databases, err := getDatabaseNames()
@@ -74,35 +75,39 @@ func getStats() (*stats, error) {
 	return organizeGetResults(results, databases)
 }
 
-func organizeGetResults(results map[string]getResult, databases []string) (*stats, error) {
-	
-	for _, result := range results {
-		if result.err != nil {
-			return nil, result.err
-		}
+func getDatabaseNames() ([]string, error) {
+	data, err := get("/databases")
+	if err != nil {
+		return nil, err
 	}
-	
-	stats := stats {
-		cpu: results["/admin/debug/cpu/stats"].result,
-		memory: results["/admin/debug/memory/stats"].result,
-		metrics: results["/admin/metrics"].result,
-		nodeInfo: results["/cluster/node-info"].result,
-	}
-	
-	for _, database := range databases {
-		dbs := dbStats {
-			database: database,
-			collectionStats: results[fmt.Sprintf("/databases/%s/collections/stats", database)].result,
-			indexes: results[fmt.Sprintf("/databases/%s/indexes", database)].result,
-			metrics: results[fmt.Sprintf("/databases/%s/metrics", database)].result,
-			databaseStats: results[fmt.Sprintf("/databases/%s/stats", database)].result,
-			storage: results[fmt.Sprintf("/databases/%s//debug/storage/report", database)].result,
-		}
-		
-		stats.dbStats = append(stats.dbStats, dbs)
+	var databases []string
+
+	dbsNode, _, _, _ := jp.Get(data, "Databases")
+	jp.ArrayEach(dbsNode, func(value []byte, dataType jp.ValueType, offset int, err error) {
+		database, _ := jp.GetString(value, "Name")
+		databases = append(databases, database)
+	})
+
+	return databases, nil
+}
+
+func preparePaths(databases []string) []string {
+	paths := []string{
+		"/admin/debug/cpu/stats",
+		"/admin/debug/memory/stats",
+		"/admin/metrics",
+		"/cluster/node-info",
 	}
 
-	return &stats, nil
+	for _, database := range databases {
+		paths = append(paths, fmt.Sprintf("/databases/%s/collections/stats", database))
+		paths = append(paths, fmt.Sprintf("/databases/%s/indexes", database))
+		paths = append(paths, fmt.Sprintf("/databases/%s/metrics", database))
+		paths = append(paths, fmt.Sprintf("/databases/%s/stats", database))
+		paths = append(paths, fmt.Sprintf("/databases/%s/debug/storage/report", database))
+	}
+
+	return paths
 }
 
 func getAllPaths(paths []string, maxParallelism int) map[string]getResult {
@@ -148,41 +153,6 @@ func getWorker(paths <-chan string, results chan<- getResult) <-chan bool {
 	return done
 }
 
-func getDatabaseNames() ([]string, error) {
-	data, err := get("/databases")
-	if err != nil {
-		return nil, err
-	}
-	var databases []string
-
-	dbsNode, _, _, _ := jp.Get(data, "Databases")
-	jp.ArrayEach(dbsNode, func(value []byte, dataType jp.ValueType, offset int, err error) {
-		database, _ := jp.GetString(value, "Name")
-		databases = append(databases, database)
-	})
-
-	return databases, nil
-}
-
-func preparePaths(databases []string) []string {
-	paths := []string{
-		"/admin/debug/cpu/stats",
-		"/admin/debug/memory/stats",
-		"/admin/metrics",
-		"/cluster/node-info",
-	}
-
-	for _, database := range databases {
-		paths = append(paths, fmt.Sprintf("/databases/%s/collections/stats", database))
-		paths = append(paths, fmt.Sprintf("/databases/%s/indexes", database))
-		paths = append(paths, fmt.Sprintf("/databases/%s/metrics", database))
-		paths = append(paths, fmt.Sprintf("/databases/%s/stats", database))
-		paths = append(paths, fmt.Sprintf("/databases/%s/debug/storage/report", database))
-	}
-
-	return paths
-}
-
 type getResult struct {
 	path string
 	result []byte
@@ -208,3 +178,35 @@ func get(path string) ([]byte, error) {
 
 	return buf, nil
 }
+
+func organizeGetResults(results map[string]getResult, databases []string) (*stats, error) {
+	
+	for _, result := range results {
+		if result.err != nil {
+			return nil, result.err
+		}
+	}
+	
+	stats := stats {
+		cpu: results["/admin/debug/cpu/stats"].result,
+		memory: results["/admin/debug/memory/stats"].result,
+		metrics: results["/admin/metrics"].result,
+		nodeInfo: results["/cluster/node-info"].result,
+	}
+	
+	for _, database := range databases {
+		dbs := dbStats {
+			database: database,
+			collectionStats: results[fmt.Sprintf("/databases/%s/collections/stats", database)].result,
+			indexes: results[fmt.Sprintf("/databases/%s/indexes", database)].result,
+			metrics: results[fmt.Sprintf("/databases/%s/metrics", database)].result,
+			databaseStats: results[fmt.Sprintf("/databases/%s/stats", database)].result,
+			storage: results[fmt.Sprintf("/databases/%s//debug/storage/report", database)].result,
+		}
+		
+		stats.dbStats = append(stats.dbStats, dbs)
+	}
+
+	return &stats, nil
+}
+
