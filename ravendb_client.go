@@ -18,7 +18,7 @@ type stats struct {
 	memory []byte
 	metrics []byte
 	nodeInfo []byte
-	dbStats []dbStats
+	dbStats []*dbStats
 }
 
 type dbStats struct {
@@ -195,7 +195,7 @@ func organizeGetResults(results map[string]getResult, databases []string) (*stat
 	}
 	
 	for _, database := range databases {
-		dbs := dbStats {
+		dbs := &dbStats {
 			database: database,
 			collectionStats: results[fmt.Sprintf("/databases/%s/collections/stats", database)].result,
 			indexes: results[fmt.Sprintf("/databases/%s/indexes", database)].result,

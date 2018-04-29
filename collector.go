@@ -24,26 +24,40 @@ type exporter struct {
 	mapReduceIndexMappedCount	prometheus.Counter
 	mapReduceIndexReducedCount	prometheus.Counter
 
+	databaseDocumentCount		*prometheus.GaugeVec
+
 }
 
 func newExporter() *exporter {
 	return &exporter{
-		up:         		createGauge("up", "Whether the RavenDB scrape was successful"),
-		workingSet: 		createGauge("working_set_bytes", "Process working set"),
-		cpuTime:			createCounter("cpu_time_seconds", "CPU time"),
-		isLeader:			createGauge("is_leader", "If 1, then node is the cluster leader, otherwise 0"),
-		requestCount:		createCounter("request_count", "Server-wide request count"),
-		documentPutCount:	createCounter("document_put_count", "Server-wide document puts count"),
-		documentPutBytes:	createCounter("document_put_bytes", "Server-wide document put bytes"),
-		mapIndexIndexedCount:	createCounter("mapindex_indexed_count", "Server-wide map index indexed count"),
-		mapReduceIndexMappedCount:	createCounter("mapreduceindex_mapped_count", "Server-wide map-reduce index mapped count"),
-		mapReduceIndexReducedCount:	createCounter("mapreduceindex_reduced_count", "Server-wide map-reduce index reduced count"),
+		up:         					createGauge("up", "Whether the RavenDB scrape was successful"),
+		workingSet: 					createGauge("working_set_bytes", "Process working set"),
+		cpuTime:						createCounter("cpu_time_seconds", "CPU time"),
+		isLeader:						createGauge("is_leader", "If 1, then node is the cluster leader, otherwise 0"),
+		requestCount:					createCounter("request_count", "Server-wide request count"),
+		documentPutCount:				createCounter("document_put_count", "Server-wide document puts count"),
+		documentPutBytes:				createCounter("document_put_bytes", "Server-wide document put bytes"),
+		mapIndexIndexedCount:			createCounter("mapindex_indexed_count", "Server-wide map index indexed count"),
+		mapReduceIndexMappedCount:		createCounter("mapreduceindex_mapped_count", "Server-wide map-reduce index mapped count"),
+		mapReduceIndexReducedCount:		createCounter("mapreduceindex_reduced_count", "Server-wide map-reduce index reduced count"),
+
+		databaseDocumentCount:			createGaugeDatabaseVec("database_document_count", "Count of documents in a database"),
 	}
 }
 
 func (e *exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.up.Desc()
 	ch <- e.workingSet.Desc()
+	ch <- e.cpuTime.Desc()
+	ch <- e.isLeader.Desc()
+	ch <- e.requestCount.Desc()
+	ch <- e.documentPutCount.Desc()
+	ch <- e.documentPutBytes.Desc()
+	ch <- e.mapIndexIndexedCount.Desc()
+	ch <- e.mapReduceIndexMappedCount.Desc()
+	ch <- e.mapReduceIndexReducedCount.Desc()
+
+	e.databaseDocumentCount.Describe(ch)
 }
 
 func (e *exporter) Collect(ch chan<- prometheus.Metric) {
@@ -84,6 +98,12 @@ func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 
 		e.mapReduceIndexReducedCount.Set(getMapReduceIndexReducedCount(stats))
 		ch <- e.mapReduceIndexReducedCount
+
+		for _, dbs := range stats.dbStats {
+			e.databaseDocumentCount.WithLabelValues(dbs.database).Set(getDatabaseDocumentCount(dbs));
+		}
+
+		e.databaseDocumentCount.Collect(ch)
 	}
 }
 
@@ -139,6 +159,11 @@ func getMapReduceIndexReducedCount(stats *stats) float64 {
 	return value
 }
 
+func getDatabaseDocumentCount(dbStats *dbStats) float64 {
+	value, _ := jp.GetFloat(dbStats.databaseStats, "CountOfDocuments")
+	return value
+}
+
 func createGauge(name string, help string) prometheus.Gauge {
 	return prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace,
@@ -146,6 +171,15 @@ func createGauge(name string, help string) prometheus.Gauge {
 		Name:      name,
 		Help:      help,
 	})
+}
+
+func createGaugeDatabaseVec(name string, help string) *prometheus.GaugeVec {
+	return prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: subsystem,
+		Name:      name,
+		Help:      help,
+	}, []string { "database" })
 }
 
 func createCounter(name string, help string) prometheus.Counter {
