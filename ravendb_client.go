@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
+	jp "github.com/buger/jsonparser"
 	"io/ioutil"
 	"net/http"
-	jp "github.com/buger/jsonparser"
 )
 
 var (
@@ -14,20 +14,20 @@ var (
 )
 
 type stats struct {
-	cpu	[]byte
-	memory []byte
-	metrics []byte
+	cpu      []byte
+	memory   []byte
+	metrics  []byte
 	nodeInfo []byte
-	dbStats []*dbStats
+	dbStats  []*dbStats
 }
 
 type dbStats struct {
-	database string
+	database        string
 	collectionStats []byte
-	metrics []byte
-	indexes []byte
-	databaseStats []byte
-	storage []byte
+	metrics         []byte
+	indexes         []byte
+	databaseStats   []byte
+	storage         []byte
 }
 
 func initializeClient() {
@@ -60,16 +60,15 @@ func initializeClient() {
 
 }
 
-
 func getStats() (*stats, error) {
-	
+
 	databases, err := getDatabaseNames()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	paths := preparePaths(databases)
-	
+
 	results := getAllPaths(paths, 16)
 
 	return organizeGetResults(results, databases)
@@ -141,11 +140,11 @@ func getAllPaths(paths []string, maxParallelism int) map[string]getResult {
 
 func getWorker(paths <-chan string, results chan<- getResult) <-chan bool {
 	done := make(chan bool)
-	
+
 	go func() {
 		for path := range paths {
 			result, err := get(path)
-			results <- getResult { path, result, err }
+			results <- getResult{path, result, err}
 		}
 		done <- true
 	}()
@@ -154,17 +153,16 @@ func getWorker(paths <-chan string, results chan<- getResult) <-chan bool {
 }
 
 type getResult struct {
-	path string
+	path   string
 	result []byte
-	err error
+	err    error
 }
-
 
 func get(path string) ([]byte, error) {
 	url := ravenDbURL + path
-	
+
 	log.WithField("url", url).Debug("GET request to RavenDB")
-	
+
 	response, err := client.Get(url)
 	if err != nil {
 		return nil, err
@@ -180,33 +178,32 @@ func get(path string) ([]byte, error) {
 }
 
 func organizeGetResults(results map[string]getResult, databases []string) (*stats, error) {
-	
+
 	for _, result := range results {
 		if result.err != nil {
 			return nil, result.err
 		}
 	}
-	
-	stats := stats {
-		cpu: results["/admin/debug/cpu/stats"].result,
-		memory: results["/admin/debug/memory/stats"].result,
-		metrics: results["/admin/metrics"].result,
+
+	stats := stats{
+		cpu:      results["/admin/debug/cpu/stats"].result,
+		memory:   results["/admin/debug/memory/stats"].result,
+		metrics:  results["/admin/metrics"].result,
 		nodeInfo: results["/cluster/node-info"].result,
 	}
-	
+
 	for _, database := range databases {
-		dbs := &dbStats {
-			database: database,
+		dbs := &dbStats{
+			database:        database,
 			collectionStats: results[fmt.Sprintf("/databases/%s/collections/stats", database)].result,
-			indexes: results[fmt.Sprintf("/databases/%s/indexes", database)].result,
-			metrics: results[fmt.Sprintf("/databases/%s/metrics", database)].result,
-			databaseStats: results[fmt.Sprintf("/databases/%s/stats", database)].result,
-			storage: results[fmt.Sprintf("/databases/%s//debug/storage/report", database)].result,
+			indexes:         results[fmt.Sprintf("/databases/%s/indexes", database)].result,
+			metrics:         results[fmt.Sprintf("/databases/%s/metrics", database)].result,
+			databaseStats:   results[fmt.Sprintf("/databases/%s/stats", database)].result,
+			storage:         results[fmt.Sprintf("/databases/%s//debug/storage/report", database)].result,
 		}
-		
+
 		stats.dbStats = append(stats.dbStats, dbs)
 	}
 
 	return &stats, nil
 }
-
