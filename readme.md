@@ -19,8 +19,6 @@ go build -o ravendb_exporter
 
 ### Using Docker
 
-_Please note the docker image will be available soon_
-
 ```bash
 docker run -d -p 9440:9440 -e RAVENDB_URL=http://live-test.ravendb.net marcinbudny/ravendb_exporter
 ```
@@ -46,6 +44,6 @@ _TODO_
 
 ## Changelog
 
-### 0.1.0
+### 0.1.1
 
 * Initial version
