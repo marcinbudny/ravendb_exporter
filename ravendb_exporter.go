@@ -50,11 +50,11 @@ func serveMetrics() {
 
 func readAndValidateConfig() {
 	flag.StringVar(&ravenDbURL, "ravendb-url", "http://localhost:8080", "RavenDB URL")
-	flag.UintVar(&port, "port", 9440, "Port to listen on")
+	flag.UintVar(&port, "port", 9440, "Port to expose scraping endpoint on")
 	flag.DurationVar(&timeout, "timeout", time.Second*10, "Timeout when calling RavenDB")
 	flag.BoolVar(&verbose, "verbose", false, "Enable verbose logging")
 
-	flag.StringVar(&caCertFile, "ca-cert", "", "Path to CA public cert file")
+	flag.StringVar(&caCertFile, "ca-cert", "", "Path to CA public cert file of RavenDB server")
 	flag.BoolVar(&useAuth, "use-auth", false, "If set, connection to RavenDB will be authenticated with a client certificate")
 	flag.StringVar(&clientCertFile, "client-cert", "", "Path to client public certificate used for authentication")
 	flag.StringVar(&clientKeyFile, "client-key", "", "Path to client private key used for authentication")
