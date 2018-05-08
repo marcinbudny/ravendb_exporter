@@ -73,7 +73,7 @@ Let me know if there is a metric you would like to be added.
 
 * **ravendb_database_document_count** - Count of documents in a database
 * **ravendb_database_index_count** - Count of indexes in a database
-* **ravendb_database_stale_index_cont** - Count of stale indexes in a database
+* **ravendb_database_stale_index_count** - Count of stale indexes in a database
 * **ravendb_database_size_bytes** - Database size in bytes
 * **ravendb_database_request_count** - Database request count
 * **ravendb_database_document_put_count** - Database document puts count
@@ -84,6 +84,10 @@ Let me know if there is a metric you would like to be added.
 
 
 ## Changelog
+
+### 0.1.2
+
+* Fixed name of the ravendb_database_stale_index_count metric
 
 ### 0.1.1
 

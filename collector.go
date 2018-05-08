@@ -1,10 +1,11 @@
 package main
 
 import (
-	jp "github.com/buger/jsonparser"
-	"github.com/prometheus/client_golang/prometheus"
 	"regexp"
 	"strconv"
+
+	jp "github.com/buger/jsonparser"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
@@ -52,7 +53,7 @@ func newExporter() *exporter {
 
 		databaseDocumentCount:   createDatabaseGaugeVec("database_document_count", "Count of documents in a database"),
 		databaseIndexCount:      createDatabaseGaugeVec("database_index_count", "Count of indexes in a database"),
-		databaseStaleIndexCount: createDatabaseGaugeVec("database_stale_index_cont", "Count of stale indexes in a database"),
+		databaseStaleIndexCount: createDatabaseGaugeVec("database_stale_index_count", "Count of stale indexes in a database"),
 		databaseSize:            createDatabaseGaugeVec("database_size_bytes", "Database size in bytes"),
 
 		databaseRequestCount:               createDatabaseCounterVec("database_request_count", "Database request count"),
