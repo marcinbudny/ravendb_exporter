@@ -57,69 +57,70 @@ marcinbudny/ravendb_exporter
 Let me know if there is a metric you would like to be added.
 
 ```
-# HELP ravendb_cpu_time_seconds CPU time
-# TYPE ravendb_cpu_time_seconds counter
-ravendb_cpu_time_seconds 1644.953125
-# HELP ravendb_database_document_count Count of documents in a database
-# TYPE ravendb_database_document_count gauge
-ravendb_database_document_count{database="Demo"} 1064
-# HELP ravendb_database_document_put_bytes Database document put bytes
-# TYPE ravendb_database_document_put_bytes counter
-ravendb_database_document_put_bytes{database="Demo"} 0
-# HELP ravendb_database_document_put_count Database document puts count
-# TYPE ravendb_database_document_put_count counter
-ravendb_database_document_put_count{database="Demo"} 0
-# HELP ravendb_database_index_count Count of indexes in a database
-# TYPE ravendb_database_index_count gauge
-ravendb_database_index_count{database="Demo"} 17
-# HELP ravendb_database_mapindex_indexed_count Database map index indexed count
-# TYPE ravendb_database_mapindex_indexed_count counter
-ravendb_database_mapindex_indexed_count{database="Demo"} 0
-# HELP ravendb_database_mapreduceindex_mapped_count Database map-reduce index mapped count
-# TYPE ravendb_database_mapreduceindex_mapped_count counter
-ravendb_database_mapreduceindex_mapped_count{database="Demo"} 0
-# HELP ravendb_database_mapreduceindex_reduced_count Database map-reduce index reduced count
-# TYPE ravendb_database_mapreduceindex_reduced_count counter
-ravendb_database_mapreduceindex_reduced_count{database="Demo"} 0
-# HELP ravendb_database_request_count Database request count
-# TYPE ravendb_database_request_count counter
-ravendb_database_request_count{database="Demo"} 39
+ravendb_cpu_time_seconds_total 1613.68
+# HELP ravendb_database_document_put_bytes_total Database document put bytes
+# TYPE ravendb_database_document_put_bytes_total counter
+ravendb_database_document_put_bytes_total{database="Demo"} 405
+# HELP ravendb_database_document_put_total Database document puts count
+# TYPE ravendb_database_document_put_total counter
+ravendb_database_document_put_total{database="Demo"} 3
+# HELP ravendb_database_documents Count of documents in a database
+# TYPE ravendb_database_documents gauge
+ravendb_database_documents{database="Demo"} 1063
+# HELP ravendb_database_indexes Count of indexes in a database
+# TYPE ravendb_database_indexes gauge
+ravendb_database_indexes{database="Demo"} 20
+# HELP ravendb_database_mapindex_indexed_total Database map index indexed count
+# TYPE ravendb_database_mapindex_indexed_total counter
+ravendb_database_mapindex_indexed_total{database="Demo"} 952
+# HELP ravendb_database_mapreduceindex_mapped_total Database map-reduce index mapped count
+# TYPE ravendb_database_mapreduceindex_mapped_total counter
+ravendb_database_mapreduceindex_mapped_total{database="Demo"} 0
+# HELP ravendb_database_mapreduceindex_reduced_total Database map-reduce index reduced count
+# TYPE ravendb_database_mapreduceindex_reduced_total counter
+ravendb_database_mapreduceindex_reduced_total{database="Demo"} 0
+# HELP ravendb_database_request_total Database request count
+# TYPE ravendb_database_request_total counter
+ravendb_database_request_total{database="Demo"} 6179
 # HELP ravendb_database_size_bytes Database size in bytes
 # TYPE ravendb_database_size_bytes gauge
-ravendb_database_size_bytes{database="Demo"} 6.01227264e+08
-# HELP ravendb_database_stale_index_cont Count of stale indexes in a database
-# TYPE ravendb_database_stale_index_cont gauge
-ravendb_database_stale_index_cont{database="Demo"} 0
-# HELP ravendb_document_put_bytes Server-wide document put bytes
-# TYPE ravendb_document_put_bytes counter
-ravendb_document_put_bytes 0
-# HELP ravendb_document_put_count Server-wide document puts count
-# TYPE ravendb_document_put_count counter
-ravendb_document_put_count 0
+ravendb_database_size_bytes{database="Demo"} 6.35568128e+08
+# HELP ravendb_database_stale_indexes Count of stale indexes in a database
+# TYPE ravendb_database_stale_indexes gauge
+ravendb_database_stale_indexes{database="Demo"} 0
+# HELP ravendb_document_put_bytes_total Server-wide document put bytes
+# TYPE ravendb_document_put_bytes_total counter
+ravendb_document_put_bytes_total 0
+# HELP ravendb_document_put_total Server-wide document puts count
+# TYPE ravendb_document_put_total counter
+ravendb_document_put_total 0
 # HELP ravendb_is_leader If 1, then node is the cluster leader, otherwise 0
 # TYPE ravendb_is_leader gauge
 ravendb_is_leader 1
-# HELP ravendb_mapindex_indexed_count Server-wide map index indexed count
-# TYPE ravendb_mapindex_indexed_count counter
-ravendb_mapindex_indexed_count 0
-# HELP ravendb_mapreduceindex_mapped_count Server-wide map-reduce index mapped count
-# TYPE ravendb_mapreduceindex_mapped_count counter
-ravendb_mapreduceindex_mapped_count 0
-# HELP ravendb_mapreduceindex_reduced_count Server-wide map-reduce index reduced count
-# TYPE ravendb_mapreduceindex_reduced_count counter
-ravendb_mapreduceindex_reduced_count 0
-# HELP ravendb_request_count Server-wide request count
-# TYPE ravendb_request_count counter
-ravendb_request_count 63350
+# HELP ravendb_mapindex_indexed_total Server-wide map index indexed count
+# TYPE ravendb_mapindex_indexed_total counter
+ravendb_mapindex_indexed_total 0
+# HELP ravendb_mapreduceindex_mapped_total Server-wide map-reduce index mapped count
+# TYPE ravendb_mapreduceindex_mapped_total counter
+ravendb_mapreduceindex_mapped_total 0
+# HELP ravendb_mapreduceindex_reduced_total Server-wide map-reduce index reduced count
+# TYPE ravendb_mapreduceindex_reduced_total counter
+ravendb_mapreduceindex_reduced_total 0
+# HELP ravendb_request_total Server-wide request count
+# TYPE ravendb_request_total counter
+ravendb_request_total 15530
 # HELP ravendb_up Whether the RavenDB scrape was successful
 # TYPE ravendb_up gauge
 ravendb_up 1
 # HELP ravendb_working_set_bytes Process working set
 # TYPE ravendb_working_set_bytes gauge
-ravendb_working_set_bytes 7.00002304e+08
-```
+ravendb_working_set_bytes 1.651195904e+09```
 
 ## Changelog
+
+### 0.2.0 
+
+* Changed metric names to conform to Prometheus guidelines
 
 ### 0.1.2
 
