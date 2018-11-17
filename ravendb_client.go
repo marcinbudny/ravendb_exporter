@@ -3,10 +3,12 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
-	jp "github.com/buger/jsonparser"
 	"io/ioutil"
 	"net/http"
+
+	jp "github.com/buger/jsonparser"
 )
 
 var (
@@ -172,6 +174,10 @@ func get(path string) ([]byte, error) {
 	buf, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	if response.StatusCode >= 400 {
+		return nil, errors.New(fmt.Sprintf("Server responded with HTTP %d and body: %s", response.StatusCode, string(buf)))
 	}
 
 	return buf, nil
