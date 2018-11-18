@@ -116,7 +116,8 @@ ravendb_request_total 15530
 ravendb_up 1
 # HELP ravendb_working_set_bytes Process working set
 # TYPE ravendb_working_set_bytes gauge
-ravendb_working_set_bytes 1.651195904e+09```
+ravendb_working_set_bytes 1.651195904e+09
+```
 
 ## Changelog
 
