@@ -120,6 +120,11 @@ ravendb_working_set_bytes 1.651195904e+09```
 
 ## Changelog
 
+### 0.3.0
+
+* Support for password protected private keys
+* Fixed problem with no option to load config file #1
+
 ### 0.2.0 
 
 * Changed metric names to conform to Prometheus guidelines
