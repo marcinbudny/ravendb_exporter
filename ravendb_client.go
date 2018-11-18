@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -177,7 +176,7 @@ func get(path string) ([]byte, error) {
 	}
 
 	if response.StatusCode >= 400 {
-		return nil, errors.New(fmt.Sprintf("Server responded with HTTP %d and body: %s", response.StatusCode, string(buf)))
+		return nil, fmt.Errorf("Server responded with HTTP %d and body: %s", response.StatusCode, string(buf))
 	}
 
 	return buf, nil
