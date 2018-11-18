@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -32,27 +30,8 @@ type dbStats struct {
 }
 
 func initializeClient() {
-	tlsConfig := &tls.Config{}
 
-	if caCertFile != "" {
-		caCertData, err := ioutil.ReadFile(caCertFile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(caCertData)
-		tlsConfig.RootCAs = caCertPool
-	}
-
-	if useAuth {
-		cert, err := tls.LoadX509KeyPair(clientCertFile, clientKeyFile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		tlsConfig.Certificates = []tls.Certificate{cert}
-		tlsConfig.BuildNameToCertificate()
-	}
-	transport := &http.Transport{TLSClientConfig: tlsConfig}
+	transport := &http.Transport{TLSClientConfig: prepareTLSConfig()}
 
 	client = http.Client{
 		Transport: transport,

@@ -37,6 +37,7 @@ The exporter can be configured with commandline arguments, environment variables
 |--use-auth|USE_AUTH|false|If set, connection to RavenDB will be authenticated with a client certificate|
 |--client-cert|CLIENT_CERT|(empty)|Path to client public certificate used for authentication|
 |--client-key|CLIENT_KEY|(empty)|Path to client private key used for authentication|
+|--client-key-password|CLIENT_KEY_PASSWORD|(empty)|Password for the client key (if it is encrypted)|
 
 Sample configuration with authentication, for Docker:
 
@@ -47,6 +48,7 @@ docker run -d \
 -e USE_AUTH=true \
 -e CLIENT_CERT=/certs/admin.client.certificate.myserver.crt \
 -e CLIENT_KEY=/certs/admin.client.certificate.myserver.key \
+-e CLIENT_KEY_PASSWORD=mypassword
 -v /path/to/certs/on/host:/certs \
 -p 9440:9440 \
 marcinbudny/ravendb_exporter

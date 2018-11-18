@@ -20,11 +20,12 @@ var (
 	port    uint
 	verbose bool
 
-	ravenDbURL     string
-	caCertFile     string
-	useAuth        bool
-	clientCertFile string
-	clientKeyFile  string
+	ravenDbURL        string
+	caCertFile        string
+	useAuth           bool
+	clientCertFile    string
+	clientKeyFile     string
+	clientKeyPassword string
 )
 
 func serveLandingPage() {
@@ -59,6 +60,7 @@ func readAndValidateConfig() {
 	flag.BoolVar(&useAuth, "use-auth", false, "If set, connection to RavenDB will be authenticated with a client certificate")
 	flag.StringVar(&clientCertFile, "client-cert", "", "Path to client public certificate used for authentication")
 	flag.StringVar(&clientKeyFile, "client-key", "", "Path to client private key used for authentication")
+	flag.StringVar(&clientKeyPassword, "client-key-password", "", "(optional) Password for the client private keys")
 
 	flag.Parse()
 
