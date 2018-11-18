@@ -49,6 +49,7 @@ func serveMetrics() {
 }
 
 func readAndValidateConfig() {
+	flag.String(flag.DefaultConfigFlagname, "", "path to config file")
 	flag.StringVar(&ravenDbURL, "ravendb-url", "http://localhost:8080", "RavenDB URL")
 	flag.UintVar(&port, "port", 9440, "Port to expose scraping endpoint on")
 	flag.DurationVar(&timeout, "timeout", time.Second*10, "Timeout when calling RavenDB")
