@@ -9,12 +9,8 @@ Exports RavenDB metrics and allows for Prometheus scraping. Versions prior to 4 
 You need to have a Go 1.20+ environment configured.
 
 ```bash
-cd $GOPATH/src
-mkdir -p github.com/marcinbudny
-git clone https://github.com/marcinbudny/ravendb_exporter github.com/marcinbudny/ravendb_exporter
-cd github.com/marcinbudny/ravendb_exporter 
-go build -o ravendb_exporter
-./ravendb_exporter --ravendb-url=http://live-test.ravendb.net
+go install github.com/marcinbudny/ravendb_exporter@latest
+ravendb_exporter --ravendb-url=http://live-test.ravendb.net
 ```
 
 ### Using Docker

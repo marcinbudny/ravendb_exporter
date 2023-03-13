@@ -1,4 +1,4 @@
-module ravendb_exporter
+module github.com/marcinbudny/ravendb_exporter
 
 go 1.20
 
