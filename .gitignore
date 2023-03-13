@@ -13,3 +13,5 @@
 
 .vscode
 debug
+
+ravendb_exporter

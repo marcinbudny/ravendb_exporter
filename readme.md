@@ -1,12 +1,12 @@
-# RavenDB 4 Prometheus exporter
+# RavenDB Prometheus exporter
 
-Exports RavenDB 4 metrics and allows for Prometheus scraping. Versions prior to 4 are not supported due to different API and authentication mechanism.
+Exports RavenDB metrics and allows for Prometheus scraping. Versions prior to 4 are not supported due to different API and authentication mechanism.
 
 ## Installation
 
 ### From source
 
-You need to have a Go 1.6+ environment configured.
+You need to have a Go 1.20+ environment configured.
 
 ```bash
 cd $GOPATH/src
