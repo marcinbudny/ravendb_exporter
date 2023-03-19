@@ -15,3 +15,4 @@
 debug
 
 ravendb_exporter
+run_latest_docker.sh
