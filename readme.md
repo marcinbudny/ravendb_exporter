@@ -117,6 +117,10 @@ ravendb_working_set_bytes 1.651195904e+09
 
 ## Changelog
 
+### 0.4.0
+* Updated golang version, some of the dependencies
+* Used `scratch` as base for the docker image
+
 ### 0.3.0
 
 * Support for password protected private keys
