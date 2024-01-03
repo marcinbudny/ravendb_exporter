@@ -25,10 +25,12 @@ type exporter struct {
 	mapReduceIndexMappedTotal  prometheus.Counter
 	mapReduceIndexReducedTotal prometheus.Counter
 
-	databaseDocuments    *prometheus.GaugeVec
-	databaseIndexes      *prometheus.GaugeVec
-	databaseStaleIndexes *prometheus.GaugeVec
-	databaseSize         *prometheus.GaugeVec
+	databaseDocuments     *prometheus.GaugeVec
+	databaseIndexes       *prometheus.GaugeVec
+	databaseStaleIndexes  *prometheus.GaugeVec
+	databaseSize          *prometheus.GaugeVec
+	databaseInactiveTasks *prometheus.GaugeVec
+	databaseActiveTasks   *prometheus.GaugeVec
 
 	databaseRequestTotal               *prometheus.CounterVec
 	databaseDocumentPutTotal           *prometheus.CounterVec
@@ -51,10 +53,12 @@ func newExporter() *exporter {
 		mapReduceIndexMappedTotal:  createCounter("mapreduceindex_mapped_total", "Server-wide map-reduce index mapped count"),
 		mapReduceIndexReducedTotal: createCounter("mapreduceindex_reduced_total", "Server-wide map-reduce index reduced count"),
 
-		databaseDocuments:    createDatabaseGaugeVec("database_documents", "Count of documents in a database"),
-		databaseIndexes:      createDatabaseGaugeVec("database_indexes", "Count of indexes in a database"),
-		databaseStaleIndexes: createDatabaseGaugeVec("database_stale_indexes", "Count of stale indexes in a database"),
-		databaseSize:         createDatabaseGaugeVec("database_size_bytes", "Database size in bytes"),
+		databaseDocuments:     createDatabaseGaugeVec("database_documents", "Count of documents in a database"),
+		databaseIndexes:       createDatabaseGaugeVec("database_indexes", "Count of indexes in a database"),
+		databaseStaleIndexes:  createDatabaseGaugeVec("database_stale_indexes", "Count of stale indexes in a database"),
+		databaseSize:          createDatabaseGaugeVec("database_size_bytes", "Database size in bytes"),
+		databaseInactiveTasks: createDatabaseGaugeVec("database_inactive_tasks", "Count of inactive tasks in a database"),
+		databaseActiveTasks:   createDatabaseGaugeVec("database_active_tasks", "Count of active tasks in a database"),
 
 		databaseRequestTotal:               createDatabaseCounterVec("database_request_total", "Database request count"),
 		databaseDocumentPutTotal:           createDatabaseCounterVec("database_document_put_total", "Database document puts count"),
@@ -81,6 +85,8 @@ func (e *exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.databaseIndexes.Describe(ch)
 	e.databaseStaleIndexes.Describe(ch)
 	e.databaseSize.Describe(ch)
+	e.databaseInactiveTasks.Describe(ch)
+	e.databaseActiveTasks.Describe(ch)
 
 	e.databaseRequestTotal.Describe(ch)
 	e.databaseDocumentPutTotal.Describe(ch)
@@ -132,6 +138,8 @@ func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 		collectPerDatabaseGauge(stats, e.databaseIndexes, getDatabaseIndexes, ch)
 		collectPerDatabaseGauge(stats, e.databaseStaleIndexes, getDatabaseStaleIndexes, ch)
 		collectPerDatabaseGauge(stats, e.databaseSize, getDatabaseSize, ch)
+		collectPerDatabaseGauge(stats, e.databaseInactiveTasks, getDatabaseInactiveTasks, ch)
+		collectPerDatabaseGauge(stats, e.databaseActiveTasks, getDatabaseActiveTasks, ch)
 
 		collectPerDatabaseCounter(stats, e.databaseRequestTotal, getDatabaseRequestTotal, ch)
 		collectPerDatabaseCounter(stats, e.databaseDocumentPutBytes, getDatabaseDocumentPutBytes, ch)
@@ -218,6 +226,26 @@ func getDatabaseDocuments(dbStats *dbStats) float64 {
 func getDatabaseIndexes(dbStats *dbStats) float64 {
 	value, _ := jp.GetFloat(dbStats.databaseStats, "CountOfIndexes")
 	return value
+}
+
+func countDatabaseTasksByStatus(data []byte, status string) int {
+	count := 0
+	jp.ArrayEach(data, func(value []byte, dataType jp.ValueType, offset int, err error) {
+		if taskConnectionStatus, _ := jp.GetString(value, "TaskConnectionStatus"); taskConnectionStatus == status {
+			count++
+		}
+	}, "OngoingTasksList")
+
+	return count
+}
+
+func getDatabaseInactiveTasks(dbStats *dbStats) float64 {
+	return float64(countDatabaseTasksByStatus(dbStats.tasks, "NotActive"))
+
+}
+
+func getDatabaseActiveTasks(dbStats *dbStats) float64 {
+	return float64(countDatabaseTasksByStatus(dbStats.tasks, "Active"))
 }
 
 func getDatabaseStaleIndexes(dbStats *dbStats) float64 {

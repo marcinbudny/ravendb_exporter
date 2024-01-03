@@ -117,7 +117,12 @@ ravendb_working_set_bytes 1.651195904e+09
 
 ## Changelog
 
+### 0.5.0
+
+* Added two database gauge metrics: `ravendb_database_active_tasks` and `ravendb_database_inactive_tasks`
+
 ### 0.4.0
+
 * Updated golang version, some of the dependencies
 * Used `scratch` as base for the docker image
 
