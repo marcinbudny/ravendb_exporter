@@ -13,6 +13,11 @@ const (
 	subsystem = ""
 )
 
+type metricInfo struct {
+	Value  float64
+	Labels prometheus.Labels
+}
+
 type exporter struct {
 	up                         prometheus.Gauge
 	workingSet                 prometheus.Gauge
@@ -25,12 +30,11 @@ type exporter struct {
 	mapReduceIndexMappedTotal  prometheus.Counter
 	mapReduceIndexReducedTotal prometheus.Counter
 
-	databaseDocuments     *prometheus.GaugeVec
-	databaseIndexes       *prometheus.GaugeVec
-	databaseStaleIndexes  *prometheus.GaugeVec
-	databaseSize          *prometheus.GaugeVec
-	databaseInactiveTasks *prometheus.GaugeVec
-	databaseActiveTasks   *prometheus.GaugeVec
+	databaseDocuments    *prometheus.GaugeVec
+	databaseIndexes      *prometheus.GaugeVec
+	databaseStaleIndexes *prometheus.GaugeVec
+	databaseSize         *prometheus.GaugeVec
+	databaseTasks        *prometheus.GaugeVec
 
 	databaseRequestTotal               *prometheus.CounterVec
 	databaseDocumentPutTotal           *prometheus.CounterVec
@@ -53,12 +57,11 @@ func newExporter() *exporter {
 		mapReduceIndexMappedTotal:  createCounter("mapreduceindex_mapped_total", "Server-wide map-reduce index mapped count"),
 		mapReduceIndexReducedTotal: createCounter("mapreduceindex_reduced_total", "Server-wide map-reduce index reduced count"),
 
-		databaseDocuments:     createDatabaseGaugeVec("database_documents", "Count of documents in a database"),
-		databaseIndexes:       createDatabaseGaugeVec("database_indexes", "Count of indexes in a database"),
-		databaseStaleIndexes:  createDatabaseGaugeVec("database_stale_indexes", "Count of stale indexes in a database"),
-		databaseSize:          createDatabaseGaugeVec("database_size_bytes", "Database size in bytes"),
-		databaseInactiveTasks: createDatabaseGaugeVec("database_inactive_tasks", "Count of inactive tasks in a database"),
-		databaseActiveTasks:   createDatabaseGaugeVec("database_active_tasks", "Count of active tasks in a database"),
+		databaseDocuments:    createDatabaseGaugeVec("database_documents", "Count of documents in a database"),
+		databaseIndexes:      createDatabaseGaugeVec("database_indexes", "Count of indexes in a database"),
+		databaseStaleIndexes: createDatabaseGaugeVec("database_stale_indexes", "Count of stale indexes in a database"),
+		databaseSize:         createDatabaseGaugeVec("database_size_bytes", "Database size in bytes"),
+		databaseTasks:        createDatabaseGaugeVec("database_tasks", "Tasks in a database", "name", "type", "connection_status"),
 
 		databaseRequestTotal:               createDatabaseCounterVec("database_request_total", "Database request count"),
 		databaseDocumentPutTotal:           createDatabaseCounterVec("database_document_put_total", "Database document puts count"),
@@ -85,8 +88,7 @@ func (e *exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.databaseIndexes.Describe(ch)
 	e.databaseStaleIndexes.Describe(ch)
 	e.databaseSize.Describe(ch)
-	e.databaseInactiveTasks.Describe(ch)
-	e.databaseActiveTasks.Describe(ch)
+	e.databaseTasks.Describe(ch)
 
 	e.databaseRequestTotal.Describe(ch)
 	e.databaseDocumentPutTotal.Describe(ch)
@@ -138,8 +140,7 @@ func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 		collectPerDatabaseGauge(stats, e.databaseIndexes, getDatabaseIndexes, ch)
 		collectPerDatabaseGauge(stats, e.databaseStaleIndexes, getDatabaseStaleIndexes, ch)
 		collectPerDatabaseGauge(stats, e.databaseSize, getDatabaseSize, ch)
-		collectPerDatabaseGauge(stats, e.databaseInactiveTasks, getDatabaseInactiveTasks, ch)
-		collectPerDatabaseGauge(stats, e.databaseActiveTasks, getDatabaseActiveTasks, ch)
+		collectPerDatabaseGauge(stats, e.databaseTasks, getDatabaseTasks, ch)
 
 		collectPerDatabaseCounter(stats, e.databaseRequestTotal, getDatabaseRequestTotal, ch)
 		collectPerDatabaseCounter(stats, e.databaseDocumentPutBytes, getDatabaseDocumentPutBytes, ch)
@@ -152,16 +153,24 @@ func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
-func collectPerDatabaseGauge(stats *stats, vec *prometheus.GaugeVec, collectFunc func(*dbStats) float64, ch chan<- prometheus.Metric) {
+func collectPerDatabaseGauge(stats *stats, vec *prometheus.GaugeVec, collectFunc func(*dbStats) []metricInfo, ch chan<- prometheus.Metric) {
 	for _, dbs := range stats.dbStats {
-		vec.WithLabelValues(dbs.database).Set(collectFunc(dbs))
+		metricInfos := collectFunc(dbs)
+
+		for _, metricInfo := range metricInfos {
+			vec.With(metricInfo.Labels).Set(metricInfo.Value)
+		}
 	}
 	vec.Collect(ch)
 }
 
-func collectPerDatabaseCounter(stats *stats, vec *prometheus.CounterVec, collectFunc func(*dbStats) float64, ch chan<- prometheus.Metric) {
+func collectPerDatabaseCounter(stats *stats, vec *prometheus.CounterVec, collectFunc func(*dbStats) []metricInfo, ch chan<- prometheus.Metric) {
 	for _, dbs := range stats.dbStats {
-		vec.WithLabelValues(dbs.database).Set(collectFunc(dbs))
+		metricInfos := collectFunc(dbs)
+
+		for _, metricInfo := range metricInfos {
+			vec.With(metricInfo.Labels).Set(metricInfo.Value)
+		}
 	}
 	vec.Collect(ch)
 }
@@ -218,37 +227,56 @@ func getMapReduceIndexReducedTotal(stats *stats) float64 {
 	return value
 }
 
-func getDatabaseDocuments(dbStats *dbStats) float64 {
+func getDatabaseDocuments(dbStats *dbStats) []metricInfo {
+	var mi []metricInfo
+
 	value, _ := jp.GetFloat(dbStats.databaseStats, "CountOfDocuments")
-	return value
+	labels := generateDatabaseLabels(dbStats, nil)
+	mi = appendMetricInfo(mi, value, labels)
+
+	return mi
 }
 
-func getDatabaseIndexes(dbStats *dbStats) float64 {
+func getDatabaseIndexes(dbStats *dbStats) []metricInfo {
+	var mi []metricInfo
 	value, _ := jp.GetFloat(dbStats.databaseStats, "CountOfIndexes")
-	return value
+	labels := generateDatabaseLabels(dbStats, nil)
+	mi = appendMetricInfo(mi, value, labels)
+
+	return mi
 }
 
-func countDatabaseTasksByStatus(data []byte, status string) int {
-	count := 0
-	jp.ArrayEach(data, func(value []byte, dataType jp.ValueType, offset int, err error) {
-		if taskConnectionStatus, _ := jp.GetString(value, "TaskConnectionStatus"); taskConnectionStatus == status {
-			count++
-		}
-	}, "OngoingTasksList")
+func getDatabaseTasks(dbStats *dbStats) []metricInfo {
+	var mi []metricInfo
 
-	return count
+	// Required for compatibility with versions 5 and 6
+	onGoingTasksKey := "OngoingTasks"
+	_, _, _, err := jp.Get(dbStats.tasks, onGoingTasksKey)
+	if err != nil {
+		onGoingTasksKey = "OngoingTasksList"
+	}
+
+	jp.ArrayEach(dbStats.tasks, func(value []byte, dataType jp.ValueType, offset int, err error) {
+		taskName, _ := jp.GetString(value, "TaskName")
+		taskType, _ := jp.GetString(value, "TaskType")
+		connectionStatus, _ := jp.GetString(value, "TaskConnectionStatus")
+
+		labels := generateDatabaseLabels(dbStats, map[string]string{
+			"name":              taskName,
+			"type":              taskType,
+			"connection_status": connectionStatus,
+		})
+
+		mi = appendMetricInfo(mi, 1, labels)
+	}, onGoingTasksKey)
+
+	return mi
 }
 
-func getDatabaseInactiveTasks(dbStats *dbStats) float64 {
-	return float64(countDatabaseTasksByStatus(dbStats.tasks, "NotActive"))
+func getDatabaseStaleIndexes(dbStats *dbStats) []metricInfo {
+	var mi []metricInfo
 
-}
-
-func getDatabaseActiveTasks(dbStats *dbStats) float64 {
-	return float64(countDatabaseTasksByStatus(dbStats.tasks, "Active"))
-}
-
-func getDatabaseStaleIndexes(dbStats *dbStats) float64 {
+	labels := generateDatabaseLabels(dbStats, nil)
 	count := 0
 	jp.ArrayEach(dbStats.databaseStats, func(value []byte, dataType jp.ValueType, offset int, err error) {
 		if isStale, _ := jp.GetBoolean(value, "IsStale"); isStale {
@@ -256,42 +284,78 @@ func getDatabaseStaleIndexes(dbStats *dbStats) float64 {
 		}
 	}, "Indexes")
 
-	return float64(count)
+	mi = appendMetricInfo(mi, float64(count), labels)
+	return mi
 }
 
-func getDatabaseSize(dbStats *dbStats) float64 {
+func getDatabaseSize(dbStats *dbStats) []metricInfo {
+	var mi []metricInfo
+
 	value, _ := jp.GetFloat(dbStats.databaseStats, "SizeOnDisk", "SizeInBytes")
-	return value
+	labels := generateDatabaseLabels(dbStats, nil)
+	mi = appendMetricInfo(mi, value, labels)
+
+	return mi
 }
 
-func getDatabaseRequestTotal(dbStats *dbStats) float64 {
+func getDatabaseRequestTotal(dbStats *dbStats) []metricInfo {
+	var mi []metricInfo
+
 	value, _ := jp.GetFloat(dbStats.metrics, "Requests", "RequestsPerSec", "Count")
-	return value
+	labels := generateDatabaseLabels(dbStats, nil)
+	mi = appendMetricInfo(mi, value, labels)
+
+	return mi
 }
 
-func getDatabaseDocumentPutTotal(dbStats *dbStats) float64 {
+func getDatabaseDocumentPutTotal(dbStats *dbStats) []metricInfo {
+	var mi []metricInfo
+
 	value, _ := jp.GetFloat(dbStats.metrics, "Docs", "PutsPerSec", "Count")
-	return value
+	labels := generateDatabaseLabels(dbStats, nil)
+	mi = appendMetricInfo(mi, value, labels)
+
+	return mi
 }
 
-func getDatabaseDocumentPutBytes(dbStats *dbStats) float64 {
+func getDatabaseDocumentPutBytes(dbStats *dbStats) []metricInfo {
+	var mi []metricInfo
+
 	value, _ := jp.GetFloat(dbStats.metrics, "Docs", "BytesPutsPerSec", "Count")
-	return value
+	labels := generateDatabaseLabels(dbStats, nil)
+	mi = appendMetricInfo(mi, value, labels)
+
+	return mi
 }
 
-func getDatabaseMapIndexIndexedTotal(dbStats *dbStats) float64 {
+func getDatabaseMapIndexIndexedTotal(dbStats *dbStats) []metricInfo {
+	var mi []metricInfo
+
 	value, _ := jp.GetFloat(dbStats.metrics, "MapIndexes", "IndexedPerSec", "Count")
-	return value
+	labels := generateDatabaseLabels(dbStats, nil)
+	mi = appendMetricInfo(mi, value, labels)
+
+	return mi
 }
 
-func getDatabaseMapReduceIndexMappedTotal(dbStats *dbStats) float64 {
+func getDatabaseMapReduceIndexMappedTotal(dbStats *dbStats) []metricInfo {
+	var mi []metricInfo
+
 	value, _ := jp.GetFloat(dbStats.metrics, "MapIndexes", "MappedPerSec", "Count")
-	return value
+	labels := generateDatabaseLabels(dbStats, nil)
+	mi = appendMetricInfo(mi, value, labels)
+
+	return mi
 }
 
-func getDatabaseMapReduceIndexReducedTotal(dbStats *dbStats) float64 {
+func getDatabaseMapReduceIndexReducedTotal(dbStats *dbStats) []metricInfo {
+	var mi []metricInfo
+
 	value, _ := jp.GetFloat(dbStats.metrics, "MapIndexes", "ReducedPerSec", "Count")
-	return value
+	labels := generateDatabaseLabels(dbStats, nil)
+	mi = appendMetricInfo(mi, value, labels)
+
+	return mi
 }
 
 func createGauge(name string, help string) prometheus.Gauge {
@@ -303,13 +367,13 @@ func createGauge(name string, help string) prometheus.Gauge {
 	})
 }
 
-func createDatabaseGaugeVec(name string, help string) *prometheus.GaugeVec {
+func createDatabaseGaugeVec(name string, help string, labels ...string) *prometheus.GaugeVec {
 	return prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
 		Name:      name,
 		Help:      help,
-	}, []string{"database"})
+	}, append([]string{"database"}, labels...))
 }
 
 func createCounter(name string, help string) prometheus.Counter {
@@ -321,13 +385,13 @@ func createCounter(name string, help string) prometheus.Counter {
 	})
 }
 
-func createDatabaseCounterVec(name string, help string) *prometheus.CounterVec {
+func createDatabaseCounterVec(name string, help string, labels ...string) *prometheus.CounterVec {
 	return prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
 		Name:      name,
 		Help:      help,
-	}, []string{"database"})
+	}, append([]string{"database"}, labels...))
 }
 
 var timespanRegex = regexp.MustCompile(`((?P<days>\d+)\.)?(?P<hours>\d{2}):(?P<minutes>\d{2}):(?P<seconds>\d{2})(\.(?P<secondfraction>\d{7}))?`)
@@ -371,4 +435,23 @@ func matchNamedGroups(regex *regexp.Regexp, text string) map[string]string {
 		}
 	}
 	return results
+}
+
+func generateDatabaseLabels(dbStats *dbStats, additionalLabels map[string]string) prometheus.Labels {
+	labels := prometheus.Labels{
+		"database": dbStats.database,
+	}
+
+	for key, value := range additionalLabels {
+		labels[key] = value
+	}
+
+	return labels
+}
+
+func appendMetricInfo(tasks []metricInfo, value float64, labels prometheus.Labels) []metricInfo {
+	return append(tasks, metricInfo{
+		Value:  value,
+		Labels: labels,
+	})
 }

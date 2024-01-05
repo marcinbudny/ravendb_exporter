@@ -86,6 +86,11 @@ ravendb_database_size_bytes{database="Demo"} 6.35568128e+08
 # HELP ravendb_database_stale_indexes Count of stale indexes in a database
 # TYPE ravendb_database_stale_indexes gauge
 ravendb_database_stale_indexes{database="Demo"} 0
+# HELP ravendb_database_tasks Tasks in a database
+# TYPE ravendb_database_tasks gauge
+ravendb_database_tasks{connection_status="Active",database="Demo",name="backup",type="Backup"} 1
+ravendb_database_tasks{connection_status="NotActive",database="Demo",name="DemoSubscriptionTask",type="Subscription"} 1
+ravendb_database_tasks{connection_status="NotActive",database="Demo",name="DemoSubscriptionTask2",type="Subscription"} 1
 # HELP ravendb_document_put_bytes_total Server-wide document put bytes
 # TYPE ravendb_document_put_bytes_total counter
 ravendb_document_put_bytes_total 0
@@ -119,7 +124,7 @@ ravendb_working_set_bytes 1.651195904e+09
 
 ### 0.5.0
 
-* Added two database gauge metrics: `ravendb_database_active_tasks` and `ravendb_database_inactive_tasks`
+* Added database gauge metric: `ravendb_database_tasks`
 
 ### 0.4.0
 
