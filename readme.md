@@ -88,9 +88,9 @@ ravendb_database_size_bytes{database="Demo"} 6.35568128e+08
 ravendb_database_stale_indexes{database="Demo"} 0
 # HELP ravendb_database_tasks Tasks in a database
 # TYPE ravendb_database_tasks gauge
-ravendb_database_tasks{connection_status="Active",database="Demo",name="backup",type="Backup"} 1
-ravendb_database_tasks{connection_status="NotActive",database="Demo",name="DemoSubscriptionTask",type="Subscription"} 1
-ravendb_database_tasks{connection_status="NotActive",database="Demo",name="DemoSubscriptionTask2",type="Subscription"} 1
+ravendb_database_tasks{connection_status="Active",database="Demo",type="Backup"} 2
+ravendb_database_tasks{connection_status="NotActive",database="Demo",type="Backup"} 1
+ravendb_database_tasks{connection_status="NotActive",database="Demo",type="Subscription"} 2
 # HELP ravendb_document_put_bytes_total Server-wide document put bytes
 # TYPE ravendb_document_put_bytes_total counter
 ravendb_document_put_bytes_total 0

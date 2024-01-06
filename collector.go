@@ -61,7 +61,7 @@ func newExporter() *exporter {
 		databaseIndexes:      createDatabaseGaugeVec("database_indexes", "Count of indexes in a database"),
 		databaseStaleIndexes: createDatabaseGaugeVec("database_stale_indexes", "Count of stale indexes in a database"),
 		databaseSize:         createDatabaseGaugeVec("database_size_bytes", "Database size in bytes"),
-		databaseTasks:        createDatabaseGaugeVec("database_tasks", "Tasks in a database", "name", "type", "connection_status"),
+		databaseTasks:        createDatabaseGaugeVec("database_tasks", "Tasks in a database", "type", "connection_status"),
 
 		databaseRequestTotal:               createDatabaseCounterVec("database_request_total", "Database request count"),
 		databaseDocumentPutTotal:           createDatabaseCounterVec("database_document_put_total", "Database document puts count"),
@@ -256,19 +256,26 @@ func getDatabaseTasks(dbStats *dbStats) []metricInfo {
 		onGoingTasksKey = "OngoingTasksList"
 	}
 
+	type key struct {
+		taskType, connectionStatus string
+	}
+
+	taskAggregate := make(map[key]float64)
+
 	jp.ArrayEach(dbStats.tasks, func(value []byte, dataType jp.ValueType, offset int, err error) {
-		taskName, _ := jp.GetString(value, "TaskName")
 		taskType, _ := jp.GetString(value, "TaskType")
 		connectionStatus, _ := jp.GetString(value, "TaskConnectionStatus")
+		taskAggregate[key{taskType, connectionStatus}] += 1
+	}, onGoingTasksKey)
 
+	for k, v := range taskAggregate {
 		labels := generateDatabaseLabels(dbStats, map[string]string{
-			"name":              taskName,
-			"type":              taskType,
-			"connection_status": connectionStatus,
+			"type":              k.taskType,
+			"connection_status": k.connectionStatus,
 		})
 
-		mi = appendMetricInfo(mi, 1, labels)
-	}, onGoingTasksKey)
+		mi = appendMetricInfo(mi, v, labels)
+	}
 
 	return mi
 }
