@@ -27,6 +27,7 @@ type dbStats struct {
 	indexes         []byte
 	databaseStats   []byte
 	storage         []byte
+	tasks           []byte
 }
 
 func initializeClient() {
@@ -84,6 +85,7 @@ func preparePaths(databases []string) []string {
 		paths = append(paths, fmt.Sprintf("/databases/%s/metrics", database))
 		paths = append(paths, fmt.Sprintf("/databases/%s/stats", database))
 		paths = append(paths, fmt.Sprintf("/databases/%s/debug/storage/report", database))
+		paths = append(paths, fmt.Sprintf("/databases/%s/tasks", database))
 	}
 
 	return paths
@@ -184,6 +186,7 @@ func organizeGetResults(results map[string]getResult, databases []string) (*stat
 			metrics:         results[fmt.Sprintf("/databases/%s/metrics", database)].result,
 			databaseStats:   results[fmt.Sprintf("/databases/%s/stats", database)].result,
 			storage:         results[fmt.Sprintf("/databases/%s//debug/storage/report", database)].result,
+			tasks:           results[fmt.Sprintf("/databases/%s/tasks", database)].result,
 		}
 
 		stats.dbStats = append(stats.dbStats, dbs)
