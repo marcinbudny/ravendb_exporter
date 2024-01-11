@@ -154,6 +154,7 @@ func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 }
 
 func collectPerDatabaseGauge(stats *stats, vec *prometheus.GaugeVec, collectFunc func(*dbStats) []metricInfo, ch chan<- prometheus.Metric) {
+	vec.Reset()
 	for _, dbs := range stats.dbStats {
 		metricInfos := collectFunc(dbs)
 
@@ -165,6 +166,7 @@ func collectPerDatabaseGauge(stats *stats, vec *prometheus.GaugeVec, collectFunc
 }
 
 func collectPerDatabaseCounter(stats *stats, vec *prometheus.CounterVec, collectFunc func(*dbStats) []metricInfo, ch chan<- prometheus.Metric) {
+	vec.Reset()
 	for _, dbs := range stats.dbStats {
 		metricInfos := collectFunc(dbs)
 

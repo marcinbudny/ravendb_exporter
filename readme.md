@@ -122,6 +122,10 @@ ravendb_working_set_bytes 1.651195904e+09
 
 ## Changelog
 
+### 0.5.1
+
+* Fixed issue with per database metric not properly resetting
+
 ### 0.5.0
 
 * Added database gauge metric: `ravendb_database_tasks`
